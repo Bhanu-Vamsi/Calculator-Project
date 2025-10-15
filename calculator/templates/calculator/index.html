@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .calculator {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .display {
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: right;
+            font-size: 28px;
+            font-weight: 500;
+            color: #333;
+            word-wrap: break-word;
+            word-break: break-all;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            font-size: 14px;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        button {
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        button:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .operator {
+            background: #667eea;
+            color: white;
+        }
+
+        .operator:hover {
+            background: #5568d3;
+        }
+
+        .function {
+            background: #764ba2;
+            color: white;
+            font-size: 14px;
+        }
+
+        .function:hover {
+            background: #663a8a;
+        }
+
+        .equals {
+            background: #4caf50;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .equals:hover {
+            background: #45a049;
+        }
+
+        .clear {
+            background: #f44336;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .clear:hover {
+            background: #da190b;
+        }
+
+        .cancel {
+            background: #ff9800;
+            color: white;
+        }
+
+        .cancel:hover {
+            background: #e68900;
+        }
+
+        .number {
+            background: #fafafa;
+        }
+
+        .number:hover {
+            background: #f0f0f0;
+        }
+
+        @media (max-width: 480px) {
+            .calculator {
+                max-width: 100%;
+            }
+
+            .display {
+                font-size: 24px;
+            }
+
+            button {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="title">Calculator</div>
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <!-- Row 1: Functions -->
+            <button class="function" onclick="handleFunction('sqrt')">√</button>
+            <button class="function" onclick="handleFunction('factorial')">x!</button>
+            <button class="function" onclick="handleFunction('log')">log</button>
+            <button class="cancel" onclick="handleCancel()">←</button>
+
+            <!-- Row 2: Basic operations -->
+            <button class="number" onclick="appendNumber('7')">7</button>
+            <button class="number" onclick="appendNumber('8')">8</button>
+            <button class="number" onclick="appendNumber('9')">9</button>
+            <button class="operator" onclick="appendOperator('/')">÷</button>
+
+            <!-- Row 3: Basic operations -->
+            <button class="number" onclick="appendNumber('4')">4</button>
+            <button class="number" onclick="appendNumber('5')">5</button>
+            <button class="number" onclick="appendNumber('6')">6</button>
+            <button class="operator" onclick="appendOperator('*')">×</button>
+
+            <!-- Row 4: Basic operations -->
+            <button class="number" onclick="appendNumber('1')">1</button>
+            <button class="number" onclick="appendNumber('2')">2</button>
+            <button class="number" onclick="appendNumber('3')">3</button>
+            <button class="operator" onclick="appendOperator('-')">−</button>
+
+            <!-- Row 5: Operations and equals -->
+            <button class="number" onclick="appendNumber('0')">0</button>
+            <button class="number" onclick="appendNumber('.')">.</button>
+            <button class="operator" onclick="appendOperator('+')">+</button>
+            <button class="operator" onclick="handleFunction('power')">^</button>
+
+            <!-- Row 6: Clear and Equals -->
+            <button class="clear" onclick="handleClear()">Clear</button>
+            <button class="equals" onclick="handleEquals()">=</button>
+        </div>
+        <button id="history-btn">History</button>
+        <div id="history-container" style="display:none; border:1px solid #ccc; padding:10px; margin-top:10px;">
+            <h3>Calculation History</h3>
+            <ul id="history-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        let display = document.getElementById('display');
+        let currentExpression = '';
+
+        function appendNumber(num) {
+            if (currentExpression === '0' && num !== '.') {
+                currentExpression = num;
+            } else if (num === '.' && currentExpression.includes('.')) {
+                return; // Don't add multiple dots
+            } else {
+                currentExpression += num;
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            if (currentExpression === '' && op === '-') {
+                currentExpression = '-';
+            } else if (currentExpression !== '') {
+                if (op === '^') {
+                    currentExpression += '^';
+                } else {
+                    currentExpression += ' ' + op + ' ';
+                }
+            }
+            updateDisplay();
+        }
+
+        function handleFunction(func) {
+            if (func === 'sqrt' || func === 'factorial' || func === 'log') {
+                if (currentExpression === '') return;
+                
+                fetch('/calculate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        expression: currentExpression,
+                        operation: func
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        display.textContent = data.error;
+                        display.classList.add('error');
+                    } else {
+                        currentExpression = data.result.toString();
+                        updateDisplay();
+                    }
+                })
+                .catch(error => {
+                    display.textContent = 'Error';
+                    display.classList.add('error');
+                });
+            } else if (func === 'power') {
+                if (currentExpression !== '') {
+                    currentExpression += '^';
+                    updateDisplay();
+                }
+            }
+        }
+
+        function handleEquals() {
+            if (currentExpression === '') return;
+
+            fetch('/calculate/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    expression: currentExpression,
+                    operation: 'equals'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    display.textContent = data.error;
+                    display.classList.add('error');
+                } else {
+                    currentExpression = data.result.toString();
+                    updateDisplay();
+                }
+            })
+            .catch(error => {
+                display.textContent = 'Error';
+                display.classList.add('error');
+            });
+        }
+
+        function handleCancel() {
+            if (currentExpression !== '') {
+                currentExpression = currentExpression.slice(0, -1);
+            }
+            if (currentExpression === '') {
+                currentExpression = '0';
+            }
+            updateDisplay();
+        }
+
+        function handleClear() {
+            currentExpression = '';
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            display.classList.remove('error');
+            display.textContent = currentExpression || '0';
+        }
+
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        }
+
+        // Initialize
+        updateDisplay();
+
+        document.getElementById('history-btn').addEventListener('click', function() {
+            const container = document.getElementById('history-container');
+            const list = document.getElementById('history-list');
+            // Toggle visibility
+            container.style.display = container.style.display === 'none' ? 'block' : 'none';
+            if (container.style.display === 'block') {
+                fetch('/history/')
+                    .then(response => response.json())
+                    .then(data => {
+                        list.innerHTML = '';
+                        data.history.forEach(item => {
+                            const li = document.createElement('li');
+                            li.textContent = `${item.timestamp}: ${item.expression} (${item.operation}) = ${item.result !== null ? item.result : item.error}`;
+                            list.appendChild(li);
+                        });
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
